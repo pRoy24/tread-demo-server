@@ -20,7 +20,7 @@ var UserSchema = new Schema({
     avatar_url: String,
     access_token: String,
     user_web_token: String,
-    user_image_pins: [{link: String, added: {type: Date, default: Date.UTC }, tags: [String]}]
+    user_image_pins: [{link: String, added: { type: Date, default: Date.now}, tags: [String]}]
   });
   
   
