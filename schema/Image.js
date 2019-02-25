@@ -14,7 +14,6 @@ var Schema = mongoose.Schema;
 
 var UserSchema = new Schema({
     name: String,
-    userName: String,
     company: String,
     email: String,
     bio: String,

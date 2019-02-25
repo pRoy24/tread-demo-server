@@ -1,6 +1,9 @@
 module.exports = {
     isNonEmptyObject: function(obj) {
-        
+        if (typeof obj === "undefined" || obj === null || Object.keys(obj).length === 0) {
+            return false;
+        }
+        return true;        
     },
     isEmptyObject: function(obj) {
         if (typeof obj === "undefined" || obj === null || Object.keys(obj).length === 0) {
