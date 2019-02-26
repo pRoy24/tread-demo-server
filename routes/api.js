@@ -8,6 +8,7 @@ const GITHUB_CLIENT_ID = process.env.AUTH_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.AUTH_CLIENT_SECRET;
 const hat = require('hat');
 const User = require('../schema/User');
+const Url = require('../schema/Url');
 const ObjectUtils = require('../utils/ObjectUtils');
 var fs = require('fs');
 const extractor = require('unfluff');
@@ -18,16 +19,22 @@ router.post('/pin', function(req, res){
 
     let {link, tags, added} = req.body;
     let imageLink = "https://via.placeholder.com/150";
-    
+    let urlHash = generateURLHash(link);
     var isLinkImage = endsWithAny(["jpg", "png", "gif", "jpeg"], link);
     if (!tags) {
         tags = ["default"];
         added = new Date();
     }
     
+    // Create shortened url mapping asynchronously
+    const urlPayload = {link, linkHash: urlHash};
+    var url = new Url(urlPayload);
+    url.save({});
+    
     if (isLinkImage) {
         imageLink = link;
-        const imageData = {link, tags, added, imageLink};        
+        
+        const imageData = {link, tags, added, imageLink, urlHash};        
         saveUser(usertoken, imageData).then(function(saveRes){
             res.send({"message": "success", "user": saveRes});
         });        
@@ -39,9 +46,9 @@ router.post('/pin', function(req, res){
             if (pageImage) {
                 imageLink = pageImage;
             }    
-            const imageData = {link, tags, added, imageLink};
+            const imageData = {link, tags, added, imageLink, urlHash};
             saveUser(usertoken, imageData).then(function(saveRes){
-                res.send({"message": "success", "user": saveRes});
+                res.send({"message": "success", "pin": imageData});
             });
         })
     }
@@ -60,7 +67,7 @@ router.get('/wall', function(req, res){
     const pageEndIndex = pageStartIndex + 12;
     
     let next = page + 1;
-    console.log("Start "+ pageStartIndex + " End "+ pageEndIndex);
+
     User.findOne({"user_web_token": usertoken}, 'user_image_pins').then(function(userImagePins){
         let userPins = userImagePins.user_image_pins; 
         let pinLength = userPins.length;
@@ -99,9 +106,7 @@ router.get('/profile_wall', function(req, res){
     const pageEndIndex = pageStartIndex + 12;
     
     let next = page + 1;
-    console.log("Start "+ pageStartIndex + " End "+ pageEndIndex);
-    console.log("Username "+username);
-    
+
     User.findOne({"userName": username}, 'user_image_pins').then(function(userImagePins){
         
         let userPins = userImagePins.user_image_pins; 
@@ -136,4 +141,18 @@ function saveUser(usertoken, imageData) {
         })
     })
 }
+
+//Pseudorandom url hash generator. 
+// last 3 digits of unix timestamp + sum of ascii values of digits in url
+function generateURLHash(url) {
+    let asciiVal = 0;
+    for (let a =0; a < url.length; a++) {
+       asciiVal += url.charCodeAt(a);
+    }
+    let currentTS = Math.floor(Date.now() / 1000).toString();
+    let lastDigits = Number(currentTS.substr(currentTS.length - 4));
+    let urlHashNum = asciiVal + lastDigits;
+    return urlHashNum;
+}
+
 module.exports = router;
