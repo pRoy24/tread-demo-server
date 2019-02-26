@@ -122,6 +122,28 @@ router.get('/profile_wall', function(req, res){
     });    
 })
 
+router.delete('/delete_pin', function(req, res){
+    const {usertoken} = req.headers;    
+    const {id} = req.query;
+    User.findOne({"user_web_token": usertoken}).then(function(userResponse){
+       let idxToDelete = userResponse.user_image_pins.findIndex(function(item){
+          return item._id.toString() === id;
+       });
+
+       userResponse.user_image_pins.splice(idxToDelete, 1);
+       userResponse.save({}).then(function(saveResponse){
+           res.send({"message": "success", "id": id});
+       })
+    });
+});
+
+router.get('/full_url', function(req, res){
+   const {hash} = req.query;
+   Url.findOne({"linkHash": hash}).then(function(responseData){
+       res.send({"message": "success", "data": responseData});
+   })
+});
+
 
 function endsWithAny(suffixes, string) {
     return suffixes.some(function (suffix) {
